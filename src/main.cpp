@@ -4,6 +4,7 @@
 #include <string>
 #include "json.hpp"
 #include "PID.h"
+//update 4.4,2019, Bolin
 
 // for convenience
 using nlohmann::json;
@@ -33,12 +34,21 @@ string hasData(string s) {
 int main() {
   uWS::Hub h;
 
-  PID pid;
+  PID pid_lat;
+  //PID pid_lon;
   /**
    * TODO: Initialize the pid variable.
    */
+  double initial_Kp = 0.2;
+  double initial_Ki = 0.0001;
+  double initial_Kd = 1.3;
+  pid_lat.Init(initial_Kp, initial_Ki, initial_Kd);
+  //initial_Kd = 0.2;
+  //initial_Ki = 0.0002;
+  //pid_lon.Init(initial_Kp, initial_Ki, initial_Kd);
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
+
+  h.onMessage([&pid_lat](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -63,13 +73,17 @@ int main() {
            * NOTE: Feel free to play around with the throttle and speed.
            *   Maybe use another PID controller to control the speed!
            */
+		  double lat_con;
+
+		  pid_lat.UpdateError(cte);
+		  lat_con = pid_lat.TotalError();
           
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value 
                     << std::endl;
 
           json msgJson;
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = lat_con;
           msgJson["throttle"] = 0.3;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
